@@ -1,0 +1,555 @@
+---
+Metadata:
+  AWSToolsMetrics:
+    IaC_Generator: "arn:aws:cloudformation:eu-west-1:342940030216:generatedTemplate/3b0eeb82-db0e-440d-9a16-b73a64c00a2f"
+# Input parameters discovered from the EC2 instance.
+Parameters:
+  KeyName:
+    Default: "ATU-INS"
+    Type: "String"
+    Description: "Name of an existing EC2 KeyPair to enable SSH access"
+# AWS infrastructure resources discovered from the current account.
+Resources:
+
+  # Connects the project internet gateway to the dedicated three-tier VPC.
+  EC2VPCGatewayAttachmentIGW:
+    # Retain physical resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::VPCGatewayAttachment"
+    # Retain physical resource when the stack is deleted.
+    DeletionPolicy: "Retain"
+    Properties:
+      InternetGatewayId: "igw-07133ece5b0c86743"
+      VpcId: "vpc-04e4e8dbcecef41cf"
+
+  # Associates public subnet 2 with the shared public route table.
+  EC2SubnetRouteTableAssociationAO:
+    # Retain physical resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    # Retain physical resource.
+    DeletionPolicy: "Retain"
+    Properties:
+      RouteTableId: "rtb-0bb2410ef0119d7e3"
+      SubnetId: "subnet-0699922c5897dc801"
+
+
+  EC2Subnet:
+    # Retain physical resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::Subnet"
+    # Retain physical resource.
+    DeletionPolicy: "Retain"
+    Properties:
+      MapPublicIpOnLaunch: true
+      EnableDns64: false
+      VpcId: "vpc-0a3eb95cc3abd13ed"
+      AvailabilityZoneId: "euw1-az2"
+      PrivateDnsNameOptionsOnLaunch:
+        EnableResourceNameDnsARecord: false
+        HostnameType: "ip-name"
+        EnableResourceNameDnsAAAARecord: false
+      AvailabilityZone: "eu-west-1a"
+      CidrBlock: "172.31.16.0/20"
+      Ipv6Native: false
+      Tags: []
+
+  # Associates public subnet 1 with the public route table.
+  EC2SubnetRouteTableAssociationWc:
+    # Retain physical resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    # Retain physical resource.
+    DeletionPolicy: "Retain"
+    Properties:
+      RouteTableId: "rtb-0bb2410ef0119d7e3"
+      SubnetId: "subnet-0c2673839165a1175"
+
+  # Private subnet 1 in eu-west-1a, intended for private application/database resources.
+  EC2SubnetTg:
+    # Retain physical resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::Subnet"
+    # Retain physical resource when the stack is deleted.
+    DeletionPolicy: "Retain"
+    Properties:
+      MapPublicIpOnLaunch: false
+      EnableDns64: false
+      VpcId: "vpc-04e4e8dbcecef41cf"
+      AvailabilityZoneId: "euw1-az2"
+      PrivateDnsNameOptionsOnLaunch:
+        EnableResourceNameDnsARecord: false
+        HostnameType: "ip-name"
+        EnableResourceNameDnsAAAARecord: false
+      AvailabilityZone: "eu-west-1a"
+      CidrBlock: "10.0.128.0/24"
+      Ipv6Native: false
+      Tags:
+      - Value: "atu-three-tier-subnet-private1-eu-west-1a"
+        Key: "Name"
+      - Value: "three-tier"
+        Key: "atu-vpc"
+
+  # Private route table for the second Availability Zone.
+  EC2RouteTableHo:
+    # Retain physical resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::RouteTable"
+    # Retain physical resource.
+    DeletionPolicy: "Retain"
+    Properties:
+      VpcId: "vpc-04e4e8dbcecef41cf"
+      Tags:
+      - Value: "atu-three-tier-rtb-private2-eu-west-1b"
+        Key: "Name"
+      - Value: "three-tier"
+        Key: "atu-vpc"
+
+  EC2SecurityGroup:
+    # Retain physical resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::SecurityGroup"
+    # Retain physical resource.
+    DeletionPolicy: "Retain"
+    Properties:
+      GroupDescription: "default VPC security group"
+      GroupName: "default"
+      VpcId: "vpc-04e4e8dbcecef41cf"
+      # Allowed inbound connections.
+      SecurityGroupIngress:
+      - SourceSecurityGroupId: "sg-03f78b720b1d7cd09"
+        IpProtocol: "-1"
+        SourceSecurityGroupOwnerId: "342940030216"
+      # Outbound traffic permissions.
+      SecurityGroupEgress:
+      - CidrIp: "0.0.0.0/0"
+        IpProtocol: "-1"
+
+  EC2SecurityGroupCb:
+    # Retain physical resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::SecurityGroup"
+    # Retain physical resource.
+    DeletionPolicy: "Retain"
+    Properties:
+      GroupDescription: "RDS MySQL database security group"
+      GroupName: "atu-db-sg"
+      VpcId: "vpc-04e4e8dbcecef41cf"
+      # Allowed inbound connections.
+      SecurityGroupIngress:
+      - IpProtocol: "tcp"
+        FromPort: 3306
+        SourceSecurityGroupId: "sg-0c5249268f8079f41"
+        ToPort: 3306
+        SourceSecurityGroupOwnerId: "342940030216"
+      # Outbound traffic permissions.
+      SecurityGroupEgress:
+      - CidrIp: "0.0.0.0/0"
+        IpProtocol: "-1"
+      Tags:
+      - Value: "MySql"
+        Key: "atu-db"
+
+
+  EC2RoutePn:
+    # Retain physical resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::Route"
+    # Retain physical resource.
+    DeletionPolicy: "Retain"
+    Properties:
+      RouteTableId: "rtb-02a4d3ddd5c10b7f0"
+      DestinationCidrBlock: "10.0.0.0/16"
+      GatewayId: "local"
+      VpcEndpointId: "local"
+
+  EC2SubnetUE:
+    # Retain physical resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::Subnet"
+    # Retain physical resource.
+    DeletionPolicy: "Retain"
+    Properties:
+      MapPublicIpOnLaunch: false
+      EnableDns64: false
+      VpcId: "vpc-04e4e8dbcecef41cf"
+      AvailabilityZoneId: "euw1-az3"
+      PrivateDnsNameOptionsOnLaunch:
+        EnableResourceNameDnsARecord: false
+        HostnameType: "ip-name"
+        EnableResourceNameDnsAAAARecord: false
+      AvailabilityZone: "eu-west-1b"
+      CidrBlock: "10.0.16.0/24"
+      Ipv6Native: false
+      Tags:
+      - Value: "atu-three-tier-subnet-public2-eu-west-1b"
+        Key: "Name"
+      - Value: "three-tier"
+        Key: "atu-vpc"
+
+
+  EC2SubnetRouteTableAssociationKP:
+    # Retain physical resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    # Retain physical resource.
+    DeletionPolicy: "Retain"
+    Properties:
+      RouteTableId: "rtb-0007c42f70b1d96a0"
+      SubnetId: "subnet-0e7e8bfaeebcd00b1"
+
+  # Public zonal NAT gateway: permits outbound internet connectivity for private subnets.
+  EC2NatGateway:
+    # Retain physical resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::NatGateway"
+    # Retain physical resource.
+    DeletionPolicy: "Retain"
+    Properties:
+      PrivateIpAddress: "10.0.0.98"
+      ConnectivityType: "public"
+      VpcId: "vpc-04e4e8dbcecef41cf"
+      AvailabilityMode: "zonal"
+      # Elastic IP allocation.
+      AllocationId: "eipalloc-04dec7767da788e06"
+      SubnetId: "subnet-0c2673839165a1175"
+      Tags:
+      - Value: "three-tier"
+        Key: "atu-vpc"
+      - Value: "atu-three-tier-nat-public1-eu-west-1a"
+        Key: "Name"
+
+  EC2RouteTableAY:
+    # Retain physical resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::RouteTable"
+    # Retain physical resource.
+    DeletionPolicy: "Retain"
+    Properties:
+      VpcId: "vpc-04e4e8dbcecef41cf"
+
+  # Web-tier firewall: exposes Apache HTTP/TCP 80 to internet clients.
+  EC2SecurityGroupIv:
+    # Retain physical resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::SecurityGroup"
+    # Retain physical resource.
+    DeletionPolicy: "Retain"
+    Properties:
+      GroupDescription: "Apache web-server SG"
+      GroupName: "atu-web-sg"
+      VpcId: "vpc-04e4e8dbcecef41cf"
+      # Allowed inbound connections.
+      SecurityGroupIngress:
+      - CidrIp: "0.0.0.0/0"
+        IpProtocol: "tcp"
+        FromPort: 80
+        ToPort: 80
+      # Outbound traffic permissions.
+      SecurityGroupEgress:
+      - CidrIp: "0.0.0.0/0"
+        IpProtocol: "-1"
+      Tags:
+      - Value: "apache"
+        Key: "atu-web"
+
+  EC2Instance:
+    # Retain physical resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::Instance"
+    # Retain physical resource.
+    DeletionPolicy: "Retain"
+    Properties:
+      Tenancy: "default"
+      PrivateIpAddress: "10.0.0.230"
+      MetadataOptions:
+        HttpPutResponseHopLimit: 2
+        HttpProtocolIpv6: "disabled"
+        HttpTokens: "required"
+        InstanceMetadataTags: "disabled"
+        HttpEndpoint: "enabled"
+      # Existing Apache setup script encoded as base64 by IaC Generator.
+      UserData: "IyEvYmluL2Jhc2gKc2V0IC1ldXgKCiMgSW5zdGFsbCB0aGUgQXBhY2hlIEhUVFAgU2VydmVyCmRuZiBpbnN0YWxsIC15IGh0dHBkCgpjYXQgPiAvdmFyL3d3dy9odG1sL2luZGV4Lmh0bWwgPDwnU1RPUCcKPCFET0NUWVBFIGh0bWw+CjxodG1sIGxhbmc9ImVuIj4KPGhlYWQ+CiAgICA8bWV0YSBjaGFyc2V0PSJVVEYtOCI+CiAgICA8dGl0bGU+QVRVIFRocmVlLVRpZXIgQXJjaGl0ZWN0dXJlPC90aXRsZT4KPC9oZWFkPgo8Ym9keT4KICAgIDxoMT5XZWxjb21lIHRvIHRoZSBBVFUgVGhyZWUtVGllciBBcmNoaXRlY3R1cmU8L2gxPgogICAgPGgyPldlYiBUaWVyOiBBcGFjaGUgb24gQW1hem9uIEVDMjwvaDI+CiAgICA8cD5UaGUgQXBhY2hlIHdlYiBzZXJ2ZXIgaXMgcnVubmluZyBzdWNjZXNzZnVsbHkuPC9wPgogICAgPHA+QXBwbGljYXRpb24gYW5kIGRhdGFiYXNlIHRpZXJzIGNvbWluZyBuZXh0LjwvcD4KPC9ib2R5Pgo8L2h0bWw+ClNUT1AKCiMgU3RhcnQgQXBhY2hlIGFuZCBlbmFibGUgaXQgb24gcmVib290CnN5c3RlbWN0bCBlbmFibGUgLS1ub3cgaHR0cGQK"
+      InstanceInitiatedShutdownBehavior: "stop"
+      BlockDeviceMappings:
+      - Ebs:
+          SnapshotId: "snap-09bc78d57081d0d50"
+          VolumeType: "gp3"
+          Iops: 3000
+          VolumeSize: 8
+          Encrypted: false
+          DeleteOnTermination: true
+        DeviceName: "/dev/xvda"
+      PrivateDnsNameOptions:
+        EnableResourceNameDnsARecord: false
+        HostnameType: "ip-name"
+        EnableResourceNameDnsAAAARecord: false
+      SecurityGroupIds:
+      - "sg-03f79844404c9c783"
+      EbsOptimized: true
+      DisableApiTermination: false
+      SourceDestCheck: true
+      PlacementGroupName: ""
+      # Existing EC2 network interface ID.
+      NetworkInterfaces:
+      - Ipv6Addresses: []
+        SecondaryPrivateIpAddressCount: 0
+        NetworkInterfaceId: "eni-00816d34599a2dc2a"
+        DeviceIndex: "0"
+      ImageId: "ami-00fcaf85b81e85b1d"
+      InstanceType: "t3.micro"
+      Monitoring: false
+      Tags:
+      - Value: "atu-web-server"
+        Key: "Name"
+      CreditSpecification:
+        CPUCredits: "unlimited"
+
+  EC2RouteKq:
+    # Retain physical resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::Route"
+    # Retain physical resource.
+    DeletionPolicy: "Retain"
+    Properties:
+      RouteTableId: "rtb-0007c42f70b1d96a0"
+      DestinationCidrBlock: "10.0.0.0/16"
+      GatewayId: "local"
+      VpcEndpointId: "local"
+
+  # Application firewall: permits Flask/TCP 5000 only from the web-tier security group.
+  EC2SecurityGroupKD:
+    # Retain physical resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::SecurityGroup"
+    # Retain physical resource.
+    DeletionPolicy: "Retain"
+    Properties:
+      GroupDescription: "Flask application security group"
+      GroupName: "atu-app-sg"
+      VpcId: "vpc-04e4e8dbcecef41cf"
+      # Allowed inbound connections.
+      SecurityGroupIngress:
+      - IpProtocol: "tcp"
+        FromPort: 5000
+        SourceSecurityGroupId: "sg-03f79844404c9c783"
+        ToPort: 5000
+        SourceSecurityGroupOwnerId: "342940030216"
+      # Outbound traffic permissions.
+      SecurityGroupEgress:
+      - CidrIp: "0.0.0.0/0"
+        IpProtocol: "-1"
+      Tags:
+      - Value: "Flask"
+        Key: "atu-app"
+
+  EC2RouteIn:
+    # Retain physical resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::Route"
+    # Retain physical resource.
+    DeletionPolicy: "Retain"
+    Properties:
+      RouteTableId: "rtb-0bb2410ef0119d7e3"
+      DestinationCidrBlock: "10.0.0.0/16"
+      GatewayId: "local"
+      VpcEndpointId: "local"
+
+  # Private subnet 2 outbound default route via NAT gateway.
+  EC2RouteQs:
+    # Retain physical resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::Route"
+    # Retain physical resource.
+    DeletionPolicy: "Retain"
+    Properties:
+      NatGatewayId: "nat-069efe9844fa3c00c"
+      RouteTableId: "rtb-03500a4ea20910383"
+      DestinationCidrBlock: "0.0.0.0/0"
+
+  # Private subnet 1 outbound default route via NAT gateway.
+  EC2Route:
+    # Retain physical resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::Route"
+    # Retain physical resource.
+    DeletionPolicy: "Retain"
+    Properties:
+      NatGatewayId: "nat-069efe9844fa3c00c"
+      RouteTableId: "rtb-0007c42f70b1d96a0"
+      DestinationCidrBlock: "0.0.0.0/0"
+
+  # Private subnet 2 in eu-west-1b.
+  EC2SubnetSi:
+    # Retain physical resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::Subnet"
+    # Retain physical resource.
+    DeletionPolicy: "Retain"
+    Properties:
+      MapPublicIpOnLaunch: false
+      EnableDns64: false
+      VpcId: "vpc-04e4e8dbcecef41cf"
+      AvailabilityZoneId: "euw1-az3"
+      PrivateDnsNameOptionsOnLaunch:
+        EnableResourceNameDnsARecord: false
+        HostnameType: "ip-name"
+        EnableResourceNameDnsAAAARecord: false
+      AvailabilityZone: "eu-west-1b"
+      CidrBlock: "10.0.144.0/24"
+      Ipv6Native: false
+      Tags:
+      - Value: "atu-three-tier-subnet-private2-eu-west-1b"
+        Key: "Name"
+      - Value: "three-tier"
+        Key: "atu-vpc"
+
+  # Shared public route table used by both public subnets.
+  EC2RouteTableAj:
+    # Retain physical resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::RouteTable"
+    # Retain physical resource.
+    DeletionPolicy: "Retain"
+    Properties:
+      VpcId: "vpc-04e4e8dbcecef41cf"
+      Tags:
+      - Value: "atu-three-tier-rtb-public"
+        Key: "Name"
+      - Value: "three-tier"
+        Key: "atu-vpc"
+
+  EC2RouteNG:
+    # Retain physical resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::Route"
+    # Retain physical resource.
+    DeletionPolicy: "Retain"
+    Properties:
+      RouteTableId: "rtb-03500a4ea20910383"
+      DestinationCidrBlock: "10.0.0.0/16"
+      GatewayId: "local"
+      VpcEndpointId: "local"
+
+
+  EC2VPCCidrBlock:
+    # Retain physical resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::VPCCidrBlock"
+    # Retain physical resource.
+    DeletionPolicy: "Retain"
+    Properties:
+      VpcId: "vpc-04e4e8dbcecef41cf"
+      CidrBlock: "10.0.0.0/16"
+
+  # Public subnet 1 in eu-west-1a; contains the Apache EC2 instance and NAT gateway.
+  EC2SubnetE0:
+    # Retain physical resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::Subnet"
+    # Retain physical resource.
+    DeletionPolicy: "Retain"
+    Properties:
+      MapPublicIpOnLaunch: false
+      EnableDns64: false
+      VpcId: "vpc-04e4e8dbcecef41cf"
+      AvailabilityZoneId: "euw1-az2"
+      PrivateDnsNameOptionsOnLaunch:
+        EnableResourceNameDnsARecord: false
+        HostnameType: "ip-name"
+        EnableResourceNameDnsAAAARecord: false
+      AvailabilityZone: "eu-west-1a"
+      CidrBlock: "10.0.0.0/24"
+      Ipv6Native: false
+      Tags:
+      - Value: "atu-three-tier-subnet-public1-eu-west-1a"
+        Key: "Name"
+      - Value: "three-tier"
+        Key: "atu-vpc"
+
+  # Dedicated 10.0.0.0/16 VPC for the three-tier.
+  EC2VPC:
+    # Retain physical resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::VPC"
+    # Retain physical resource.
+    DeletionPolicy: "Retain"
+    Properties:
+      CidrBlock: "10.0.0.0/16"
+      EnableDnsSupport: true
+      InstanceTenancy: "default"
+      EnableDnsHostnames: true
+      Tags:
+      - Value: "atu-three-tier-vpc"
+        Key: "Name"
+      - Value: "three-tier"
+        Key: "atu-vpc"
+
+  # Public route table default route to the internet gateway.
+  EC2RouteB7:
+    # Retain physical resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::Route"
+    # Retain physical resource.
+    DeletionPolicy: "Retain"
+    Properties:
+      GatewayId: "igw-07133ece5b0c86743"
+      RouteTableId: "rtb-0bb2410ef0119d7e3"
+      DestinationCidrBlock: "0.0.0.0/0"
+
+  # Private route table for eu-west-1a.
+  EC2RouteTable:
+    # Retain physical resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::RouteTable"
+    # Retain physical resource.
+    DeletionPolicy: "Retain"
+    Properties:
+      VpcId: "vpc-04e4e8dbcecef41cf"
+      Tags:
+      - Value: "atu-three-tier-rtb-private1-eu-west-1a"
+        Key: "Name"
+      - Value: "three-tier"
+        Key: "atu-vpc"
+
+  # Internet gateway providing external routing for public subnets.
+  EC2InternetGateway:
+    # Retain physical resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::InternetGateway"
+    # Retain physical resource.
+    DeletionPolicy: "Retain"
+    Properties:
+      Tags:
+      - Value: "atu-three-tier-igw"
+        Key: "Name"
+      - Value: "three-tier"
+        Key: "atu-vpc"
+
+  # Associates private subnet 2 with its private route table.
+  EC2SubnetRouteTableAssociation:
+    # Retain physical resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    # Retain physical resource.
+    DeletionPolicy: "Retain"
+    Properties:
+      RouteTableId: "rtb-03500a4ea20910383"
+      SubnetId: "subnet-015aca4892c4bdf9c"
+
+  # Elastic IP allocation used by the NAT gateway.
+  EC2EIP547617995:
+    # Retain physical resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::EIP"
+    # Retain physical resource.
+    DeletionPolicy: "Retain"
+    Properties:
+      PublicIpv4Pool: "amazon"
+      Domain: "vpc"
+      Tags:
+      - Value: "three-tier"
+        Key: "atu-vpc"
+      - Value: "atu-three-tier-eip-eu-west-1a"
+        Key: "Name"
+      NetworkBorderGroup: "eu-west-1"
