@@ -2,16 +2,6 @@
 Metadata:
   AWSToolsMetrics:
     IaC_Generator: "arn:aws:cloudformation:eu-west-1:342940030216:generatedTemplate/f4123446-65b7-4cc0-9a8e-c75a1d265514"
-# Referencing them from EC2 KeyName properties.
-Parameters:
-  KeyName:
-    Default: "ATU-INS"
-    Type: "String"
-    Description: "Name of an existing EC2 KeyPair to enable SSH access"
-  KeyName2:
-    Default: "ATU-INS"
-    Type: "String"
-    Description: "Name of an existing EC2 KeyPair to enable SSH access"
 Resources:
 # APPLICATION TIER: private EC2 instance running Flask through Waitress.
   EC2Instance:
@@ -21,7 +11,6 @@ Resources:
     Properties:
       # Standard shared EC2 hardware tenancy.
       Tenancy: "default"
-      # Private IP at the time of the scan.
       PrivateIpAddress: "10.0.128.122"
       MetadataOptions:
         HttpPutResponseHopLimit: 2
@@ -58,7 +47,7 @@ Resources:
         SecondaryPrivateIpAddressCount: 0
         NetworkInterfaceId: "eni-0d433fb47101b8715"
         DeviceIndex: "0"
-      # Amazon Linux 2023 AMI used to launch the instance; region-specific ID.
+      # Amazon Linux 2023 AMI used to launch the instance.
       ImageId: "ami-00fcaf85b81e85b1d"
       InstanceType: "t3.micro"
       Monitoring: false
@@ -111,7 +100,7 @@ Resources:
         SecondaryPrivateIpAddressCount: 0
         NetworkInterfaceId: "eni-00816d34599a2dc2a"
         DeviceIndex: "0"
-      # Amazon Linux 2023 AMI used to launch the instance; region-specific ID.
+      # Amazon Linux 2023 AMI used to launch the instance.
       ImageId: "ami-00fcaf85b81e85b1d"
       InstanceType: "t3.micro"
       Monitoring: false
@@ -120,7 +109,7 @@ Resources:
         Key: "Name"
       CreditSpecification:
         CPUCredits: "unlimited"
-# IAM Role to help config errors in the User Data
+#IAM Role to help config errors in the User Data
   IAMInstanceProfileAtuec2role:
     UpdateReplacePolicy: "Retain"
     Type: "AWS::IAM::InstanceProfile"
@@ -131,62 +120,7 @@ Resources:
       Roles:
       - "atu-ec2-role"
       InstanceProfileName: "atu-ec2-role"
-  IAMRoleAWSServiceRoleForTrustedAdvisor:
-    UpdateReplacePolicy: "Retain"
-    Type: "AWS::IAM::Role"
-    DeletionPolicy: "Retain"
-    Properties:
-      Path: "/aws-service-role/trustedadvisor.amazonaws.com/"
-      ManagedPolicyArns:
-      - "arn:aws:iam::aws:policy/aws-service-role/AWSTrustedAdvisorServiceRolePolicy"
-      MaxSessionDuration: 3600
-      RoleName: "AWSServiceRoleForTrustedAdvisor"
-      Description: "Access for the AWS Trusted Advisor Service to help reduce cost,\
-        \ increase performance, and improve security of your AWS environment."
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-        - Action: "sts:AssumeRole"
-          Effect: "Allow"
-          Principal:
-            Service: "trustedadvisor.amazonaws.com"
-  IAMRoleAWSServiceRoleForResourceExplorer:
-    UpdateReplacePolicy: "Retain"
-    Type: "AWS::IAM::Role"
-    DeletionPolicy: "Retain"
-    Properties:
-      Path: "/aws-service-role/resource-explorer-2.amazonaws.com/"
-      ManagedPolicyArns:
-      - "arn:aws:iam::aws:policy/aws-service-role/AWSResourceExplorerServiceRolePolicy"
-      MaxSessionDuration: 3600
-      RoleName: "AWSServiceRoleForResourceExplorer"
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-        - Action: "sts:AssumeRole"
-          Effect: "Allow"
-          Principal:
-            Service: "resource-explorer-2.amazonaws.com"
-
-  IAMRoleAWSServiceRoleForSupport:
-    UpdateReplacePolicy: "Retain"
-    Type: "AWS::IAM::Role"
-    DeletionPolicy: "Retain"
-    Properties:
-      Path: "/aws-service-role/support.amazonaws.com/"
-      ManagedPolicyArns:
-      - "arn:aws:iam::aws:policy/aws-service-role/AWSSupportServiceRolePolicy"
-      MaxSessionDuration: 3600
-      RoleName: "AWSServiceRoleForSupport"
-      Description: "Enables resource access for AWS to provide billing, administrative\
-        \ and support services"
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-        - Action: "sts:AssumeRole"
-          Effect: "Allow"
-          Principal:
-            Service: "support.amazonaws.com"
+# EC2 IAM role with AmazonSSMManagedInstanceCore permissions.
   IAMRoleAtuec2role:
     UpdateReplacePolicy: "Retain"
     Type: "AWS::IAM::Role"
