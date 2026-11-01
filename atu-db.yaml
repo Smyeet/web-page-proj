@@ -1,0 +1,79 @@
+---
+# IaC Generator provenance metadata.
+Metadata:
+  AWSToolsMetrics:
+    IaC_Generator: "arn:aws:cloudformation:eu-west-1:342940030216:generatedTemplate/4c5f2dc8-52e8-444a-972e-23f7babebb52"
+# Resources captured from the existing AWS account.
+Resources:
+  # Database tier: privately accessible RDS MySQL instance.
+  RDSDBInstance:
+    # Retain the existing resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::RDS::DBInstance"
+    # Retain the physical resource.
+    DeletionPolicy: "Retain"
+    Properties:
+      # Standard database insights; advanced paid monitoring is not enabled.
+      DatabaseInsightsMode: "standard"
+      # Encrypt database storage.
+      StorageEncrypted: true
+      # Default MySQL TCP port, reachable only through permitted security groups.
+      Port: "3306"
+      PreferredBackupWindow: "02:10-02:40"
+      MonitoringInterval: 0
+      NetworkType: "IPV4"
+      DedicatedLogVolume: false
+      CopyTagsToSnapshot: true
+      # Single-AZ deployment keeps the lab simple and avoids Multi-AZ costs.
+      MultiAZ: false
+      # MySQL Community Edition database engine.
+      Engine: "mysql"
+      Tags:
+      - Value: "sql"
+        Key: "atu-db"
+      EngineLifecycleSupport: "open-source-rds-extended-support-disabled"
+      LicenseModel: "general-public-license"
+      EngineVersion: "8.4.11"
+      StorageType: "gp2"
+      KmsKeyId: "arn:aws:kms:eu-west-1:342940030216:key/66e587d2-0f36-424a-9624-d14e84df732c"
+      # Small burstable compute class for a development workload.
+      DBInstanceClass: "db.t3.micro"
+      PreferredMaintenanceWindow: "sun:00:35-sun:01:05"
+      EnablePerformanceInsights: false
+      AutoMinorVersionUpgrade: true
+      # Subnet group places RDS in the two existing private subnets.
+      DBSubnetGroupName: "atu-db-subnet-group"
+      DeletionProtection: false
+      DBInstanceIdentifier: "atu-mysql-db"
+      # 20 GiB of allocated database storage.
+      AllocatedStorage: "20"
+      BackupTarget: "region"
+      CACertificateIdentifier: "rds-ca-rsa2048-g1"
+      # Self-managed password.
+      ManageMasterUserPassword: false
+      VPCSecurityGroups:
+      - "sg-0d91da3c5183d7384"
+      MasterUsername: "admin"
+      # Initial application database name.
+      DBName: "atudb"
+      EnableIAMDatabaseAuthentication: false
+      # Not accessible to public 
+      PubliclyAccessible: false
+      # Automated backups disabled for this disposable development database.
+      BackupRetentionPeriod: 0
+      
+  # The DB instance references this group by its existing physical name.
+  RDSDBSubnetGroupAtudbsubnetgroup:
+    # Retain the existing resource.
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::RDS::DBSubnetGroup"
+    # Retain the physical resource.
+    DeletionPolicy: "Retain"
+    Properties:
+      DBSubnetGroupDescription: "Private subnet group for ATU three-tier database"
+      # Existing private subnets: eu-west-1a and eu-west-1b.
+      SubnetIds:
+      - "subnet-0e7e8bfaeebcd00b1"
+      - "subnet-015aca4892c4bdf9c"
+      DBSubnetGroupName: "atu-db-subnet-group"
+
