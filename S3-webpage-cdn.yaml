@@ -2,46 +2,62 @@
 Metadata:
   AWSToolsMetrics:
     IaC_Generator: "arn:aws:cloudformation:us-east-1:342940030216:generatedTemplate/a7a2b20d-bb5d-46d1-b86e-612e2f4538d7"
+
 Resources:
   CloudFrontOriginAccessControl:
+    # Retain the resource.
     UpdateReplacePolicy: "Retain"
     Type: "AWS::CloudFront::OriginAccessControl"
+    # Retain the resource.
     DeletionPolicy: "Retain"
     Properties:
       OriginAccessControlConfig:
+        # Sign every origin request using AWS Signature Version 4.
         SigningBehavior: "always"
         Description: "Created by CloudFront"
         SigningProtocol: "sigv4"
         OriginAccessControlOriginType: "s3"
+        # AWS-generated name identifying this particular OAC.
         Name: "oac-atu-web-proj.s3.eu-west-1.amazonaws.com-mvxwls2w5jl"
+
+  # S3 stores the static HTML, CSS, JavaScript, and other website assets.
   S3BucketAtuwebproj:
     UpdateReplacePolicy: "Retain"
     Type: "AWS::S3::Bucket"
     DeletionPolicy: "Retain"
     Properties:
+      # Bucket-level attribute-based access control is disabled.
       AbacStatus: "Disabled"
+      # All four bucket-level public access blocks are disabled.
       PublicAccessBlockConfiguration:
         RestrictPublicBuckets: false
         IgnorePublicAcls: false
         BlockPublicPolicy: false
         BlockPublicAcls: false
+      # S3 bucket name value refers to the existing bucket.
       BucketName: "atu-web-proj"
       OwnershipControls:
         Rules:
+        # Bucket owner is preferred for ownership of uploaded objects.
         - ObjectOwnership: "BucketOwnerPreferred"
       BucketEncryption:
         ServerSideEncryptionConfiguration:
+        # S3 Bucket Key setting is preserved from the scan.
         - BucketKeyEnabled: true
           BlockedEncryptionTypes:
             EncryptionType:
             - "SSE-C"
+          # Server-side encryption using Amazon S3-managed keys (SSE-S3).
           ServerSideEncryptionByDefault:
             SSEAlgorithm: "AES256"
+      # Declares the index page for the S3 website endpoint.
       WebsiteConfiguration:
         IndexDocument: "index.html"
       Tags:
       - Value: "web-page"
         Key: "atu-s3"
+
+  # Second discovered Origin Access Control.
   CloudFrontOriginAccessControlQo:
     UpdateReplacePolicy: "Retain"
     Type: "AWS::CloudFront::OriginAccessControl"
@@ -53,6 +69,8 @@ Resources:
         SigningProtocol: "sigv4"
         OriginAccessControlOriginType: "s3"
         Name: "oac-atu-web-proj.s3.eu-west-1.amazonaws.com-mvxxzqfldg6"
+
+  # Its an AWS-managed policy; the distribution already references the managed cache policy by ID.
   CloudFrontCachePolicy:
     UpdateReplacePolicy: "Retain"
     Type: "AWS::CloudFront::CachePolicy"
@@ -60,11 +78,13 @@ Resources:
     Properties:
       CachePolicyConfig:
         Comment: "Policy with caching enabled. Supports Gzip and Brotli compression."
+        # Minimum, maximum, and default object cache lifetimes, in seconds.
         MinTTL: 1
         MaxTTL: 3.1536E7
         ParametersInCacheKeyAndForwardedToOrigin:
           QueryStringsConfig:
             QueryStringBehavior: "none"
+          # Include compression support in cache-key handling.
           EnableAcceptEncodingBrotli: true
           HeadersConfig:
             HeaderBehavior: "none"
@@ -73,6 +93,8 @@ Resources:
           EnableAcceptEncodingGzip: true
         DefaultTTL: 86400
         Name: "Managed-CachingOptimized"
+
+  # CloudFront serves the static site to visitors and fetches files from S3.
   CloudFrontDistributionWQ:
     UpdateReplacePolicy: "Retain"
     Type: "AWS::CloudFront::Distribution"
@@ -84,6 +106,7 @@ Resources:
           Bucket: ""
           Prefix: ""
         Comment: ""
+        # Serve index.html when visitors request the distribution root URL.
         DefaultRootObject: "index.html"
         Origins:
         - ConnectionTimeout: 10
@@ -91,6 +114,7 @@ Resources:
           ConnectionAttempts: 3
           OriginCustomHeaders: []
           DomainName: "atu-web-proj.s3.eu-west-1.amazonaws.com"
+          # Origin Shield is disabled to avoid an extra caching layer.
           OriginShield:
             Enabled: false
           S3OriginConfig:
@@ -99,21 +123,25 @@ Resources:
           OriginPath: ""
           Id: "atu-web-proj.s3.eu-west-1.amazonaws.com-mvxxx68c6nw"
         ViewerCertificate:
+          # The default CloudFront certificate is used (no custom domain certificate).
           MinimumProtocolVersion: "TLSv1"
           SslSupportMethod: "vip"
           CloudFrontDefaultCertificate: true
+        # Covers all CloudFront edge regions under the selected pricing.
         PriceClass: "PriceClass_All"
         DefaultCacheBehavior:
           Compress: true
           FunctionAssociations: []
           LambdaFunctionAssociations: []
           TargetOriginId: "atu-web-proj.s3.eu-west-1.amazonaws.com-mvxxx68c6nw"
+          # Redirect HTTP visitors to HTTPS at CloudFront.
           ViewerProtocolPolicy: "redirect-to-https"
           GrpcConfig:
             Enabled: false
           TrustedSigners: []
           FieldLevelEncryptionId: ""
           TrustedKeyGroups: []
+          # Read-only website: allow and cache only GET and HEAD methods.
           AllowedMethods:
           - "HEAD"
           - "GET"
@@ -121,6 +149,7 @@ Resources:
           - "HEAD"
           - "GET"
           SmoothStreaming: false
+          # AWS-managed CachingOptimized policy identifier (which is the default one).
           CachePolicyId: "658327ea-f89d-4fab-a63d-7e88639e58f6"
         Staging: false
         CustomErrorResponses: []
@@ -129,6 +158,7 @@ Resources:
           Quantity: 0
           Items: []
         Enabled: true
+        # visitors use the default *.cloudfront.net domain.
         Aliases: []
         IPV6Enabled: true
         WebACLId: "arn:aws:wafv2:us-east-1:342940030216:global/webacl/CreatedByCloudFront-de1594d4/b799acb3-f876-4dca-9258-371b861209a0"
@@ -140,4 +170,3 @@ Resources:
         CacheBehaviors: []
       Tags:
       - Value: "atustaticpage-cdn"
-        Key: "Name"
