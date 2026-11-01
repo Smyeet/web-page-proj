@@ -1,0 +1,221 @@
+---
+Metadata:
+  AWSToolsMetrics:
+    IaC_Generator: "arn:aws:cloudformation:eu-west-1:342940030216:generatedTemplate/f4123446-65b7-4cc0-9a8e-c75a1d265514"
+# Referencing them from EC2 KeyName properties.
+Parameters:
+  KeyName:
+    Default: "ATU-INS"
+    Type: "String"
+    Description: "Name of an existing EC2 KeyPair to enable SSH access"
+  KeyName2:
+    Default: "ATU-INS"
+    Type: "String"
+    Description: "Name of an existing EC2 KeyPair to enable SSH access"
+Resources:
+# APPLICATION TIER: private EC2 instance running Flask through Waitress.
+  EC2Instance:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::Instance"
+    DeletionPolicy: "Retain"
+    Properties:
+      # Standard shared EC2 hardware tenancy.
+      Tenancy: "default"
+      # Private IP at the time of the scan.
+      PrivateIpAddress: "10.0.128.122"
+      MetadataOptions:
+        HttpPutResponseHopLimit: 2
+        HttpProtocolIpv6: "disabled"
+        HttpTokens: "required"
+        InstanceMetadataTags: "disabled"
+        HttpEndpoint: "enabled"
+      # Original first-boot script, stored as Base64 by IaC Generator.
+      UserData: "CiMhL2Jpbi9iYXNoCnNldCAtZXV4CgojIEluc3RhbGwgUHl0aG9uIGFuZCBjcmVhdGUgYSB2aXJ0dWFsIGVudmlyb25tZW50CmRuZiBpbnN0YWxsIC15IHB5dGhvbjMgcHl0aG9uMy1waXAKbWtkaXIgLXAgL29wdC9hdHUtYXBwCnB5dGhvbjMgLW0gdmVudiAvb3B0L2F0dS1hcHAvdmVudgoKIyBJbnN0YWxsIEZsYXNrIGFuZCB0aGUgV2FpdHJlc3Mgd2ViIHNlcnZlcgovb3B0L2F0dS1hcHAvdmVudi9iaW4vcGlwIGluc3RhbGwgZmxhc2sgd2FpdHJlc3MKCiMgQ3JlYXRlIHRoZSBGbGFzayBiYWNrZW5kCmNhdCA+IC9vcHQvYXR1LWFwcC9hcHAucHkgPDwnUFlUSE9OJwpmcm9tIGZsYXNrIGltcG9ydCBGbGFzaywganNvbmlmeQoKYXBwID0gRmxhc2soX19uYW1lX18pCgpAYXBwLnJvdXRlKCIvIikKZGVmIGhvbWUoKToKICAgIHJldHVybiBqc29uaWZ5KHsKICAgICAgICAibWVzc2FnZSI6ICJBVFUgQXBwbGljYXRpb24gVGllciBpcyBydW5uaW5nIgogICAgfSkKCkBhcHAucm91dGUoIi9hcGkvc3RhdHVzIikKZGVmIHN0YXR1cygpOgogICAgcmV0dXJuIGpzb25pZnkoewogICAgICAgICJzdGF0dXMiOiAic3VjY2VzcyIsCiAgICAgICAgImFwcGxpY2F0aW9uIjogIkFUVSBUaHJlZS1UaWVyIEFyY2hpdGVjdHVyZSIsCiAgICAgICAgImRhdGFiYXNlIjogIk5vdCBjb25uZWN0ZWQgeWV0IgogICAgfSkKUFlUSE9OCgojIFNldCBvd25lcnNoaXAgb2YgdGhlIGFwcGxpY2F0aW9uIGZpbGVzCmNob3duIC1SIGVjMi11c2VyOmVjMi11c2VyIC9vcHQvYXR1LWFwcAoKIyBDcmVhdGUgYSBzeXN0ZW1kIHNlcnZpY2UgZm9yIEZsYXNrCmNhdCA+IC9ldGMvc3lzdGVtZC9zeXN0ZW0vYXR1LWZsYXNrLnNlcnZpY2UgPDwnU0VSVklDRScKW1VuaXRdCkRlc2NyaXB0aW9uPUFUVSBGbGFzayBCYWNrZW5kCkFmdGVyPW5ldHdvcmsudGFyZ2V0CgpbU2VydmljZV0KVXNlcj1lYzItdXNlcgpXb3JraW5nRGlyZWN0b3J5PS9vcHQvYXR1LWFwcApFeGVjU3RhcnQ9L29wdC9hdHUtYXBwL3ZlbnYvYmluL3dhaXRyZXNzLXNlcnZlIC0tbGlzdGVuPTAuMC4wLjA6NTAwMCBhcHA6YXBwClJlc3RhcnQ9YWx3YXlzClJlc3RhcnRTZWM9NQoKW0luc3RhbGxdCldhbnRlZEJ5PW11bHRpLXVzZXIudGFyZ2V0ClNFUlZJQ0UKCiMgU3RhcnQgRmxhc2sgYXV0b21hdGljYWxseQpzeXN0ZW1jdGwgZGFlbW9uLXJlbG9hZApzeXN0ZW1jdGwgZW5hYmxlIC0tbm93IGF0dS1mbGFzawo="
+      # OS shutdown stops, rather than terminates, this instance.
+      InstanceInitiatedShutdownBehavior: "stop"
+      BlockDeviceMappings:
+      - Ebs:
+          SnapshotId: "snap-09bc78d57081d0d50"
+          VolumeType: "gp3"
+          Iops: 3000
+          VolumeSize: 8
+          Encrypted: false
+          DeleteOnTermination: true
+        DeviceName: "/dev/xvda"
+      PrivateDnsNameOptions:
+        EnableResourceNameDnsARecord: false
+        HostnameType: "ip-name"
+        EnableResourceNameDnsAAAARecord: false
+      # Security group controlling permitted inbound and outbound traffic.
+      SecurityGroupIds:
+      - "sg-0c5249268f8079f41"
+      EbsOptimized: true
+      DisableApiTermination: false
+      SourceDestCheck: true
+      PlacementGroupName: ""
+      NetworkInterfaces:
+      - Ipv6Addresses: []
+        SecondaryPrivateIpAddressCount: 0
+        NetworkInterfaceId: "eni-0d433fb47101b8715"
+        DeviceIndex: "0"
+      # Amazon Linux 2023 AMI used to launch the instance; region-specific ID.
+      ImageId: "ami-00fcaf85b81e85b1d"
+      InstanceType: "t3.micro"
+      Monitoring: false
+      Tags:
+      - Value: "atu-app-server"
+        Key: "Name"
+      CreditSpecification:
+        CPUCredits: "unlimited"
+# WEB TIER: publicly accessible Apache HTTP Server instance.
+# The web tier serves HTML.
+  EC2InstanceWj:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::Instance"
+    DeletionPolicy: "Retain"
+    Properties:
+      Tenancy: "default"
+      PrivateIpAddress: "10.0.0.230"
+      MetadataOptions:
+        HttpPutResponseHopLimit: 2
+        HttpProtocolIpv6: "disabled"
+        HttpTokens: "required"
+        InstanceMetadataTags: "disabled"
+        HttpEndpoint: "enabled"
+      # Original first-boot script, stored as Base64 by IaC Generator.
+      UserData: "IyEvYmluL2Jhc2gKc2V0IC1ldXgKCiMgSW5zdGFsbCB0aGUgQXBhY2hlIEhUVFAgU2VydmVyCmRuZiBpbnN0YWxsIC15IGh0dHBkCgpjYXQgPiAvdmFyL3d3dy9odG1sL2luZGV4Lmh0bWwgPDwnU1RPUCcKPCFET0NUWVBFIGh0bWw+CjxodG1sIGxhbmc9ImVuIj4KPGhlYWQ+CiAgICA8bWV0YSBjaGFyc2V0PSJVVEYtOCI+CiAgICA8dGl0bGU+QVRVIFRocmVlLVRpZXIgQXJjaGl0ZWN0dXJlPC90aXRsZT4KPC9oZWFkPgo8Ym9keT4KICAgIDxoMT5XZWxjb21lIHRvIHRoZSBBVFUgVGhyZWUtVGllciBBcmNoaXRlY3R1cmU8L2gxPgogICAgPGgyPldlYiBUaWVyOiBBcGFjaGUgb24gQW1hem9uIEVDMjwvaDI+CiAgICA8cD5UaGUgQXBhY2hlIHdlYiBzZXJ2ZXIgaXMgcnVubmluZyBzdWNjZXNzZnVsbHkuPC9wPgogICAgPHA+QXBwbGljYXRpb24gYW5kIGRhdGFiYXNlIHRpZXJzIGNvbWluZyBuZXh0LjwvcD4KPC9ib2R5Pgo8L2h0bWw+ClNUT1AKCiMgU3RhcnQgQXBhY2hlIGFuZCBlbmFibGUgaXQgb24gcmVib290CnN5c3RlbWN0bCBlbmFibGUgLS1ub3cgaHR0cGQK"
+      # OS shutdown stops, rather than terminates, this instance.
+      InstanceInitiatedShutdownBehavior: "stop"
+      # Root EBS volume settings captured from the running instance.
+      BlockDeviceMappings:
+      - Ebs:
+          # REVIEW: Existing snapshot ID ties this resource to a specific image/snapshot.
+          SnapshotId: "snap-09bc78d57081d0d50"
+          VolumeType: "gp3"
+          Iops: 3000
+          VolumeSize: 8
+          # REVIEW: Root volume encryption is currently disabled in the scanned settings.
+          Encrypted: false
+          DeleteOnTermination: true
+        DeviceName: "/dev/xvda"
+      PrivateDnsNameOptions:
+        EnableResourceNameDnsARecord: false
+        HostnameType: "ip-name"
+        EnableResourceNameDnsAAAARecord: false
+      # Security group controlling permitted inbound and outbound traffic.
+      SecurityGroupIds:
+      - "sg-03f79844404c9c783"
+      EbsOptimized: true
+      DisableApiTermination: false
+      SourceDestCheck: true
+      PlacementGroupName: ""
+      # REVIEW: Existing network interface ID cannot simply be reused for a new instance.
+      NetworkInterfaces:
+      - Ipv6Addresses: []
+        SecondaryPrivateIpAddressCount: 0
+        NetworkInterfaceId: "eni-00816d34599a2dc2a"
+        DeviceIndex: "0"
+      # Amazon Linux 2023 AMI used to launch the instance; region-specific ID.
+      ImageId: "ami-00fcaf85b81e85b1d"
+      # Small EC2 instance selected for this learning exercise.
+      InstanceType: "t3.micro"
+      Monitoring: false
+      Tags:
+      - Value: "atu-web-server"
+        Key: "Name"
+      CreditSpecification:
+        CPUCredits: "unlimited"
+# Used for AWS Systems Manager access without opening inbound SSH.
+  IAMInstanceProfileAtuec2role:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::IAM::InstanceProfile"
+    DeletionPolicy: "Retain"
+    Properties:
+      Path: "/"
+      # IAM roles included in this instance profile.
+      Roles:
+      - "atu-ec2-role"
+      InstanceProfileName: "atu-ec2-role"
+# REVIEW: Account-level AWS service-linked role for Trusted Advisor.
+# Not needed for this three-tier application template; consider excluding it.
+  IAMRoleAWSServiceRoleForTrustedAdvisor:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::IAM::Role"
+    DeletionPolicy: "Retain"
+    Properties:
+      Path: "/aws-service-role/trustedadvisor.amazonaws.com/"
+      ManagedPolicyArns:
+      - "arn:aws:iam::aws:policy/aws-service-role/AWSTrustedAdvisorServiceRolePolicy"
+      MaxSessionDuration: 3600
+      RoleName: "AWSServiceRoleForTrustedAdvisor"
+      Description: "Access for the AWS Trusted Advisor Service to help reduce cost,\
+        \ increase performance, and improve security of your AWS environment."
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Action: "sts:AssumeRole"
+          Effect: "Allow"
+          Principal:
+            Service: "trustedadvisor.amazonaws.com"
+  IAMRoleAWSServiceRoleForResourceExplorer:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::IAM::Role"
+    DeletionPolicy: "Retain"
+    Properties:
+      Path: "/aws-service-role/resource-explorer-2.amazonaws.com/"
+      ManagedPolicyArns:
+      - "arn:aws:iam::aws:policy/aws-service-role/AWSResourceExplorerServiceRolePolicy"
+      MaxSessionDuration: 3600
+      RoleName: "AWSServiceRoleForResourceExplorer"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Action: "sts:AssumeRole"
+          Effect: "Allow"
+          Principal:
+            Service: "resource-explorer-2.amazonaws.com"
+
+  IAMRoleAWSServiceRoleForSupport:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::IAM::Role"
+    DeletionPolicy: "Retain"
+    Properties:
+      Path: "/aws-service-role/support.amazonaws.com/"
+      ManagedPolicyArns:
+      - "arn:aws:iam::aws:policy/aws-service-role/AWSSupportServiceRolePolicy"
+      MaxSessionDuration: 3600
+      RoleName: "AWSServiceRoleForSupport"
+      Description: "Enables resource access for AWS to provide billing, administrative\
+        \ and support services"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Action: "sts:AssumeRole"
+          Effect: "Allow"
+          Principal:
+            Service: "support.amazonaws.com"
+  IAMRoleAtuec2role:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::IAM::Role"
+    DeletionPolicy: "Retain"
+    Properties:
+      Path: "/"
+      # AWS-managed permission policies attached to this role.
+      ManagedPolicyArns:
+      - "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+      MaxSessionDuration: 3600
+      RoleName: "atu-ec2-role"
+      Description: "Allows EC2 instances to call AWS services like CloudWatch and\
+        \ Systems Manager on your behalf."
+      # Trust policy states which AWS service is allowed to assume this role.
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Action: "sts:AssumeRole"
+          Effect: "Allow"
+          Principal:
+            Service: "ec2.amazonaws.com"
+          Sid: ""
+      Tags:
+      - Value: "ssm-role"
+        Key: "atu-ec2"
