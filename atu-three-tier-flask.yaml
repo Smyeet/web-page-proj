@@ -86,15 +86,12 @@ Resources:
       UserData: "IyEvYmluL2Jhc2gKc2V0IC1ldXgKCiMgSW5zdGFsbCB0aGUgQXBhY2hlIEhUVFAgU2VydmVyCmRuZiBpbnN0YWxsIC15IGh0dHBkCgpjYXQgPiAvdmFyL3d3dy9odG1sL2luZGV4Lmh0bWwgPDwnU1RPUCcKPCFET0NUWVBFIGh0bWw+CjxodG1sIGxhbmc9ImVuIj4KPGhlYWQ+CiAgICA8bWV0YSBjaGFyc2V0PSJVVEYtOCI+CiAgICA8dGl0bGU+QVRVIFRocmVlLVRpZXIgQXJjaGl0ZWN0dXJlPC90aXRsZT4KPC9oZWFkPgo8Ym9keT4KICAgIDxoMT5XZWxjb21lIHRvIHRoZSBBVFUgVGhyZWUtVGllciBBcmNoaXRlY3R1cmU8L2gxPgogICAgPGgyPldlYiBUaWVyOiBBcGFjaGUgb24gQW1hem9uIEVDMjwvaDI+CiAgICA8cD5UaGUgQXBhY2hlIHdlYiBzZXJ2ZXIgaXMgcnVubmluZyBzdWNjZXNzZnVsbHkuPC9wPgogICAgPHA+QXBwbGljYXRpb24gYW5kIGRhdGFiYXNlIHRpZXJzIGNvbWluZyBuZXh0LjwvcD4KPC9ib2R5Pgo8L2h0bWw+ClNUT1AKCiMgU3RhcnQgQXBhY2hlIGFuZCBlbmFibGUgaXQgb24gcmVib290CnN5c3RlbWN0bCBlbmFibGUgLS1ub3cgaHR0cGQK"
       # OS shutdown stops, rather than terminates, this instance.
       InstanceInitiatedShutdownBehavior: "stop"
-      # Root EBS volume settings captured from the running instance.
       BlockDeviceMappings:
       - Ebs:
-          # REVIEW: Existing snapshot ID ties this resource to a specific image/snapshot.
           SnapshotId: "snap-09bc78d57081d0d50"
           VolumeType: "gp3"
           Iops: 3000
           VolumeSize: 8
-          # REVIEW: Root volume encryption is currently disabled in the scanned settings.
           Encrypted: false
           DeleteOnTermination: true
         DeviceName: "/dev/xvda"
@@ -109,7 +106,6 @@ Resources:
       DisableApiTermination: false
       SourceDestCheck: true
       PlacementGroupName: ""
-      # REVIEW: Existing network interface ID cannot simply be reused for a new instance.
       NetworkInterfaces:
       - Ipv6Addresses: []
         SecondaryPrivateIpAddressCount: 0
@@ -117,7 +113,6 @@ Resources:
         DeviceIndex: "0"
       # Amazon Linux 2023 AMI used to launch the instance; region-specific ID.
       ImageId: "ami-00fcaf85b81e85b1d"
-      # Small EC2 instance selected for this learning exercise.
       InstanceType: "t3.micro"
       Monitoring: false
       Tags:
@@ -125,7 +120,7 @@ Resources:
         Key: "Name"
       CreditSpecification:
         CPUCredits: "unlimited"
-# Used for AWS Systems Manager access without opening inbound SSH.
+# IAM Role to help config errors in the User Data
   IAMInstanceProfileAtuec2role:
     UpdateReplacePolicy: "Retain"
     Type: "AWS::IAM::InstanceProfile"
@@ -136,8 +131,6 @@ Resources:
       Roles:
       - "atu-ec2-role"
       InstanceProfileName: "atu-ec2-role"
-# REVIEW: Account-level AWS service-linked role for Trusted Advisor.
-# Not needed for this three-tier application template; consider excluding it.
   IAMRoleAWSServiceRoleForTrustedAdvisor:
     UpdateReplacePolicy: "Retain"
     Type: "AWS::IAM::Role"
@@ -200,14 +193,12 @@ Resources:
     DeletionPolicy: "Retain"
     Properties:
       Path: "/"
-      # AWS-managed permission policies attached to this role.
       ManagedPolicyArns:
       - "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
       MaxSessionDuration: 3600
       RoleName: "atu-ec2-role"
       Description: "Allows EC2 instances to call AWS services like CloudWatch and\
         \ Systems Manager on your behalf."
-      # Trust policy states which AWS service is allowed to assume this role.
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
