@@ -1,0 +1,33 @@
+---
+Metadata:
+  AWSToolsMetrics:
+    IaC_Generator: "arn:aws:cloudformation:eu-west-1:342940030216:generatedTemplate/2d6ffee5-2ea1-4ca3-a2e8-7f80bb75d9c4"
+Resources:
+  S3BucketAtuwebproj:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::S3::Bucket"
+    DeletionPolicy: "Retain"
+    Properties:
+      AbacStatus: "Disabled"
+      PublicAccessBlockConfiguration:
+        RestrictPublicBuckets: false
+        IgnorePublicAcls: false
+        BlockPublicPolicy: false
+        BlockPublicAcls: false
+      BucketName: "atu-web-proj"
+      OwnershipControls:
+        Rules:
+        - ObjectOwnership: "BucketOwnerPreferred"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - BucketKeyEnabled: true
+          BlockedEncryptionTypes:
+            EncryptionType:
+            - "SSE-C"
+          ServerSideEncryptionByDefault:
+            SSEAlgorithm: "AES256"
+      WebsiteConfiguration:
+        IndexDocument: "index.html"
+      Tags:
+      - Value: "web-page"
+        Key: "atu-s3"
